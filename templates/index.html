@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Chatbot</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-box"></div>
+        <form id="chat-form">
+            <input type="text" id="message" placeholder="Type your message..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <!-- Add this script tag at the end of the body -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            // Handle form submission
+            $('#chat-form').submit(function(e){
+                e.preventDefault();
+                var message = $('#message').val();
+                $('#message').val('');  // Clear the input field
+
+                // Append user's message to chat box
+                $('#chat-box').append('<div class="user-message"><strong>You:</strong> ' + message + '</div>');
+                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);  // Scroll to the latest message
+
+                // Send the message to the backend API
+                $.ajax({
+                    url: '/api/chat',  // Vercel API endpoint
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ message: message }),  // Send message as JSON
+                    success: function(response){
+                        // Append chatbot's reply to chat box
+                        $('#chat-box').append('<div class="bot-message"><strong>LM stdio:</strong> ' + response.reply + '</div>');
+                        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);  // Scroll to the latest message
+                    },
+                    error: function(){
+                        // If there is an error, display a message
+                        $('#chat-box').append('<div class="bot-message"><strong>Error:</strong> Something went wrong!</div>');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
