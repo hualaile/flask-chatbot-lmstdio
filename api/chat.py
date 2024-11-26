@@ -6,9 +6,9 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 # 获取 LM stdio API 密钥和 URL（可以在环境变量中设置）
-# API_KEY = os.getenv("LM_STDIO_API_KEY")  # 使用环境变量存储 API 密钥
-API_KEY = "lm-studio"
+API_KEY ="lm-studio" # 使用环境变量存储 API 密钥
 API_URL = "http://192.168.91.1:1234/v1/chat/completions"  # LM stdio 的 API URL，假设本地部署
+MODEL_NAME = "llama-3.2-3b-instruct"  # 这里替换为你要使用的模型名或模型ID
 
 # 聊天路由
 @app.route("/api/chat", methods=["POST"])
@@ -21,7 +21,10 @@ def chat():
     # 请求 LM stdio API 获取响应
     response = requests.post(
         API_URL,
-        json={"messages": [{"role": "user", "content": user_message}]},
+        json={
+            "model": MODEL_NAME,  # 在这里加入模型名称
+            "messages": [{"role": "user", "content": user_message}]
+        },
         headers={"Authorization": f"Bearer {API_KEY}"},
     )
 
@@ -32,6 +35,5 @@ def chat():
         return jsonify({"reply": bot_reply})
     else:
         return jsonify({"error": "Failed to get response from LM stdio"}), 500
-
 
 # 在 Vercel 上，Flask 应用会自动调用路由，无需调用 app.run()
