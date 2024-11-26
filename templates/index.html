@@ -3,50 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flask Chatbot</title>
+    <title>LM stdio Chatbot</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <div id="chat-container">
-        <div id="chat-box"></div>
-        <form id="chat-form">
-            <input type="text" id="message" placeholder="Type your message..." required>
-            <button type="submit">Send</button>
-        </form>
+    <div class="chat-container">
+        <h1>Chat with LM stdio</h1>
+        <div id="chat-box" class="chat-box"></div>
+        <textarea id="user-message" placeholder="Type your message here..."></textarea>
+        <button onclick="sendMessage()">Send</button>
     </div>
 
-    <!-- Add this script tag at the end of the body -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        $(document).ready(function(){
-            // Handle form submission
-            $('#chat-form').submit(function(e){
-                e.preventDefault();
-                var message = $('#message').val();
-                $('#message').val('');  // Clear the input field
+        function sendMessage() {
+            const message = document.getElementById("user-message").value;
+            if (!message.trim()) return;
 
-                // Append user's message to chat box
-                $('#chat-box').append('<div class="user-message"><strong>You:</strong> ' + message + '</div>');
-                $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);  // Scroll to the latest message
+            // 显示用户消息
+            const chatBox = document.getElementById("chat-box");
+            chatBox.innerHTML += `<div class="user-message">${message}</div>`;
 
-                // Send the message to the backend API
-                $.ajax({
-                    url: '/api/chat',  // Vercel API endpoint
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ message: message }),  // Send message as JSON
-                    success: function(response){
-                        // Append chatbot's reply to chat box
-                        $('#chat-box').append('<div class="bot-message"><strong>LM stdio:</strong> ' + response.reply + '</div>');
-                        $('#chat-box').scrollTop($('#chat-box')[0].scrollHeight);  // Scroll to the latest message
-                    },
-                    error: function(){
-                        // If there is an error, display a message
-                        $('#chat-box').append('<div class="bot-message"><strong>Error:</strong> Something went wrong!</div>');
-                    }
-                });
+            // 清空输入框
+            document.getElementById("user-message").value = '';
+
+            // 发送消息到后端
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message: message }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.reply) {
+                    chatBox.innerHTML += `<div class="bot-reply">${data.reply}</div>`;
+                } else {
+                    chatBox.innerHTML += `<div class="bot-reply">Error: ${data.error}</div>`;
+                }
+                chatBox.scrollTop = chatBox.scrollHeight;  // 滚动到底部
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                chatBox.innerHTML += `<div class="bot-reply">Something went wrong. Please try again later.</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
             });
-        });
+        }
     </script>
 </body>
 </html>

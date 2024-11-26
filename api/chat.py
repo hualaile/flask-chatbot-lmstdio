@@ -1,34 +1,37 @@
-import json
+import os
 import requests
+from flask import Flask, request, jsonify
 
-LM_STDIO_API_URL = 'http://192.168.91.1:1234/v1/chat/completions'
-LM_STDIO_API_KEY = 'lm-studio'
+# 初始化 Flask 应用
+app = Flask(__name__)
 
-def handler(req, res):
-    # 从请求中获取用户输入
-    user_input = req.json.get('message')
-    
-    if not user_input:
-        return res.json({"error": "Message is required."}, status=400)
-    
-    # 设置请求头
-    headers = {
-        'Authorization': f'Bearer {LM_STDIO_API_KEY}',
-        'Content-Type': 'application/json'
-    }
+# 获取 LM stdio API 密钥和 URL（可以在环境变量中设置）
+# API_KEY = os.getenv("LM_STDIO_API_KEY")  # 使用环境变量存储 API 密钥
+API_KEY = "lm-studio"
+API_URL = "http://192.168.91.1:1234/v1/chat/completions"  # LM stdio 的 API URL，假设本地部署
 
-    # 设置请求体
-    payload = {
-        "model": "llama-3.2-3b-instruct",  # 选择合适的模型
-        "messages": [{"role": "user", "content": user_input}]
-    }
+# 聊天路由
+@app.route("/api/chat", methods=["POST"])
+def chat():
+    # 从请求中获取用户的消息
+    user_message = request.json.get("message")
+    if not user_message:
+        return jsonify({"error": "Message is required"}), 400
 
-    # 调用 LM stdio API
-    response = requests.post(LM_STDIO_API_URL, json=payload, headers=headers)
+    # 请求 LM stdio API 获取响应
+    response = requests.post(
+        API_URL,
+        json={"messages": [{"role": "user", "content": user_message}]},
+        headers={"Authorization": f"Bearer {API_KEY}"},
+    )
 
+    # 处理 API 响应
     if response.status_code == 200:
         data = response.json()
-        bot_reply = data.get('choices', [{}])[0].get('message', {}).get('content', 'No response from LM stdio.')
-        return res.json({'reply': bot_reply})
+        bot_reply = data.get("choices")[0].get("message").get("content")
+        return jsonify({"reply": bot_reply})
     else:
-        return res.json({'error': 'Failed to get response from LM stdio'}, status=500)
+        return jsonify({"error": "Failed to get response from LM stdio"}), 500
+
+
+# 在 Vercel 上，Flask 应用会自动调用路由，无需调用 app.run()
